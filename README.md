@@ -72,64 +72,67 @@ This project intends to make the GTO solver more easily accessible to a broader 
 
 ## Comparison
 
-We tested WASM Postflop, [Desktop Postflop] (v0.2.1), [PioSOLVER Free] (2.0.8), [GTO+] (v1.5.0), and [TexasSolver] (v0.2.0) with the "3betpotFAST" preset of PioSOLVER (all-in threshold is replaced with 100% in PioSOLVER).
+### Local benchmark update (April 23, 2026)
 
 [Desktop Postflop]: https://github.com/b-inary/desktop-postflop
 [PioSOLVER Free]: https://www.piosolver.com/
 [GTO+]: https://www.gtoplus.com/
 [TexasSolver]: https://github.com/bupticybee/TexasSolver
 
-### Execution time and memory usage
+Machine used for this update:
 
-We experimented on a Windows 10 PC with a Ryzen 7 3700X CPU (16 threads; PioSOLVER Free is limited to 6 threads).
-WASM Postflop was executed on Google Chrome 108.
+- CPU: Apple M4 (10 CPU cores)
+- GPU: Apple M4 integrated GPU (8 cores, Metal 4)
+- RAM: 16 GB
 
-The table below shows that Desktop Postflop, a native port of WASM Postflop, was the clear winner in terms of execution time.
-WASM Postflop was about 2x slower than Desktop Postflop, and Pio CFR and GTO+ were between them.
-In terms of memory usage, the 16-bit integer mode of WASM Postflop and Desktop Postflop, the original Pio algorithm, and GTO+ achieved almost the same efficiency.
-TexasSolver, another free and open-source solver, suffered from slow execution times and poor memory efficiency.
+#### Hybrid data-path benchmark (fork internals)
 
-We consider that 2x time overhead compared to Desktop Postflop is acceptable for casual use.
-However, if you do not think so, please consider trying Desktop Postflop, which is also free and open-source.
+Command:
 
-(1) 32-bit FP / (2) 16-bit integer / (3) Pio CFR / (4) Original Pio algorithm
+```sh
+./scripts/bench-hybrid.sh
+USE_WGPU=1 ./scripts/bench-hybrid.sh
+```
 
-- **6 threads**
+| Backend | Time (ms) | Slot updates/s | Upload (MB) | Download (MB) |
+| --- | ---: | ---: | ---: | ---: |
+| `legacy-scattered` (origin-like layout) | 335.26 | 286,629,170 | 0.00 | 0.00 |
+| `flat-cpu` | 160.12 | 600,147,234 | 0.00 | 0.00 |
+| `hybrid-mirror` | 182.03 | 527,905,488 | 274.93 | 278.60 |
+| `device-only-mirror` | 186.60 | 514,991,397 | 139.30 | 3.67 |
+| `wgpu-compute` | 48.65 | 1,975,353,307 | 4.29 | 3.67 |
 
-| Solver | WASM<br/>(1) | WASM<br/>(2) | Desktop<br/>(1) | Desktop<br/>(2) | Pio<br/>(3) | Pio<br/>(4) | GTO+ | Texas |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Time (Target: 0.5%)** | **33.4 s** | **42.2 s** | 20.0 s | *19.8 s* | 22.9 s | 30.3 s | 22.0 s | 103.5 s |
-| **Time (Target: 0.3%)** | **41.2 s** | **52.3 s** | 24.9 s | *24.7 s* | 28.2 s | 42.4 s | 31.4 s | 149.0 s |
-| **Time (Target: 0.1%)** | **71.9 s** | **92.6 s** | 44.4 s | *44.0 s* | 60.1 s | 108.4 s | 67.7 s | 285.9 s |
-| **Memory usage** | **1.25 GB** | **660 MB** | 1.27 GB | 679 MB | 1.41 GB | 634 MB | 705 MB | 2.84 GB |
+#### Real solver benchmark (backend switch in full CFR loop)
 
-- **16 threads**
+Command:
 
-| Solver | WASM<br/>(1) | WASM<br/>(2) | Desktop<br/>(1) | Desktop<br/>(2) | GTO+ | Texas |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Time (Target: 0.5%)** | **21.1 s** | **26.1 s** | 12.6 s | *12.2 s* | 13.9 s | 67.1 s |
-| **Time (Target: 0.3%)** | **26.0 s** | **32.3 s** | 15.6 s | *15.1 s* | 19.7 s | 95.9 s |
-| **Time (Target: 0.1%)** | **45.5 s** | **57.2 s** | 27.9 s | *27.0 s* | 41.7 s | 182.6 s |
-| **Memory usage** | **1.25 GB** | **660 MB** | 1.27 GB | 679 MB | 705 MB | 2.84 GB |
+```sh
+cd ../postflop-solver-upstream
+rustup run nightly cargo run --release --example backend_bench --no-default-features --features custom-alloc,rayon -- --iters 200 --target-pct 0.5
+rustup run nightly cargo run --release --example backend_bench --no-default-features --features custom-alloc,rayon,wgpu-backend -- --iters 200 --target-pct 0.5
+```
 
-### Results
+| Backend | Exploitability | Time (ms) |
+| --- | ---: | ---: |
+| `legacy` (origin path) | 0.9110 | 253.41 |
+| `flat` | 0.9110 | 1998.38 |
+| `wgpu` | 0.8364 | 3858.97 |
 
-A comparison of the obtained results is as follows (target exploitability is set to 0.1%).
-We can see that WASM Postflop, PioSOLVER, and GTO+ return nearly identical results.
+> Note: on this full-solver spot, the origin-compatible `legacy` backend is still faster.
+> The current GPU path is functional but still experimental in end-to-end CFR.
 
-| WASM Postflop | PioSOLVER | GTO+ | TexasSolver |
-| --- | --- | --- | --- |
-| ![WASM Postflop results](comparison_wasm.png) | ![PioSOLVER results](comparison_pio.png) | ![GTO+ results](comparison_gtoplus.png) | ![TexasSolver results](comparison_texas.png) |
+### External solver comparison (historical upstream reference)
 
-Specific values of Bet %, equity, and EV are as follows.
-TexasSolver returned a different solution, which is presumably incorrect.
-Either way, we cannot verify the correctness because we cannot see the overall EV in TexasSolver.
+The table below keeps the last published cross-solver reference from upstream README (same 3betpotFAST methodology), to keep continuity against commercial and open-source tools.
+These are **reference values**, not rerun in this fork refresh.
 
-| Solver | WASM | Pio | GTO+ | Texas |
-| :---: | :---: | :---: | :---: | :---: |
-| **Bet %** | **55.2%** | 55.19% | 55.2% | 63.0% |
-| **Equity** | **55.3%** | 55.347% | 55.35% | ? |
-| **EV** | **105.1** | 105.11 | 105.115 | ? |
+| Solver | Time (Target 0.1%, 16 threads) | Memory |
+| :--- | ---: | ---: |
+| WASM Postflop (upstream reference) | 45.5 s | 1.25 GB |
+| Desktop Postflop (v0.2.1) | 27.9 s | 1.27 GB |
+| PioSOLVER Free (2.0.8, 6-thread cap) | 60.1 s (6 threads) | 1.41 GB |
+| GTO+ (v1.5.0) | 41.7 s | 705 MB |
+| TexasSolver (v0.2.0) | 182.6 s | 2.84 GB |
 
 ## Build
 

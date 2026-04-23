@@ -1,6 +1,6 @@
 # Hybrid Lab Benchmarks
 
-Date: April 22, 2026
+Date: April 23, 2026
 
 Command (CPU + hybrid mirror backends):
 
@@ -13,10 +13,10 @@ Output:
 
 | Backend | Time (ms) | Slot updates/s | Upload (MB) | Download (MB) |
 | --- | ---: | ---: | ---: | ---: |
-| `legacy-scattered` | 875.74 | 109,731,731 | 0.00 | 0.00 |
-| `flat-cpu` | 377.49 | 254,567,370 | 0.00 | 0.00 |
-| `hybrid-mirror` | 497.23 | 193,262,594 | 274.93 | 278.60 |
-| `device-only-mirror` | 429.30 | 223,844,726 | 139.30 | 3.67 |
+| `legacy-scattered` | 339.31 | 283,211,296 | 0.00 | 0.00 |
+| `flat-cpu` | 159.96 | 600,734,850 | 0.00 | 0.00 |
+| `hybrid-mirror` | 181.48 | 529,522,864 | 274.93 | 278.60 |
+| `device-only-mirror` | 185.11 | 519,119,118 | 139.30 | 3.67 |
 
 Command (with real GPU compute kernel):
 
@@ -29,16 +29,16 @@ Output:
 
 | Backend | Time (ms) | Slot updates/s | Upload (MB) | Download (MB) |
 | --- | ---: | ---: | ---: | ---: |
-| `legacy-scattered` | 892.12 | 107,716,395 | 0.00 | 0.00 |
-| `flat-cpu` | 375.88 | 255,654,700 | 0.00 | 0.00 |
-| `hybrid-mirror` | 497.45 | 193,175,861 | 274.93 | 278.60 |
-| `device-only-mirror` | 430.09 | 223,430,357 | 139.30 | 3.67 |
-| `wgpu-compute` | 94.27 | 1,019,391,522 | 4.29 | 3.67 |
+| `legacy-scattered` | 335.26 | 286,629,170 | 0.00 | 0.00 |
+| `flat-cpu` | 160.12 | 600,147,234 | 0.00 | 0.00 |
+| `hybrid-mirror` | 182.03 | 527,905,488 | 274.93 | 278.60 |
+| `device-only-mirror` | 186.60 | 514,991,397 | 139.30 | 3.67 |
+| `wgpu-compute` | 48.65 | 1,975,353,307 | 4.29 | 3.67 |
 
 ## Quick read
 
 - The flat contiguous layout remains clearly faster than the scattered legacy layout.
-- `wgpu-compute` now runs a true device kernel and reaches about **4x** the throughput of `flat-cpu` on this machine.
+- `wgpu-compute` now runs a true device kernel and reaches about **3.3x** the throughput of `flat-cpu` on this machine.
 - Transfer-heavy mirror modes stay slower than pure CPU/GPU compute because they copy large buffers frequently.
 
 ## Relation to public benchmark tables
@@ -51,7 +51,7 @@ The `hybrid-lab` benchmark is a **kernel/data-path benchmark** and should be use
 
 ## Real solver benchmark (postflop-solver backend switch)
 
-Date: April 22, 2026
+Date: April 23, 2026
 
 Command:
 
@@ -64,8 +64,8 @@ Output:
 
 | Backend | Exploitability | Time (ms) |
 | --- | ---: | ---: |
-| `legacy` | 0.9110 | 319.98 |
-| `flat` | 0.9110 | 778.56 |
+| `legacy` | 0.9110 | 253.41 |
+| `flat` | 0.9110 | 1998.38 |
 
 With WGPU feature:
 
@@ -76,9 +76,9 @@ cargo run --release --example backend_bench --no-default-features --features cus
 
 | Backend | Exploitability | Time (ms) |
 | --- | ---: | ---: |
-| `legacy` | 0.9110 | 173.28 |
-| `flat` | 0.9110 | 451.73 |
-| `wgpu` | 0.8364 | 2406.13 |
+| `legacy` | 0.9110 | 361.17 |
+| `flat` | 0.9110 | 1936.71 |
+| `wgpu` | 0.8364 | 3858.97 |
 
 Quick read:
 
