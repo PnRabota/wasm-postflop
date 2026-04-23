@@ -17,6 +17,26 @@ Website: https://wasm-postflop.pages.dev/
 
 ![Image](image.png)
 
+## Fork update (April 2026)
+
+This fork includes a substantial engine + UX refresh on top of upstream:
+
+- **Refreshed interface**:
+  dark/light theme support, cleaner navigation, and improved premium-style layout.
+- **Interactive combo inspector**:
+  when hovering a hand in the range matrix, the right panel now shows combos in a **mosaic/tile view** (instead of only a flat list/table style), with strategy mix and EV context.
+- **Backend selection plumbing**:
+  solver runtime now supports backend selection labels (`legacy`, `flat`, experimental `wgpu`) and reports backend/runtime-node status in the run panel.
+- **IAB/webview-safe worker fallback**:
+  if multithreaded WASM cannot initialize (e.g. missing `SharedArrayBuffer` / non-isolated context / webview limitations), the app automatically falls back to **single-thread** solver so solving still works.
+- **Experimental hybrid/GPU lab**:
+  new `rust/hybrid-lab` crate for speed-first architecture research (flat memory layout, transfer model, optional WGPU kernel, benchmark harness).
+
+For roadmap and benchmark notes from this fork:
+
+- [`HYBRID_ENGINE_ROADMAP.md`](HYBRID_ENGINE_ROADMAP.md)
+- [`HYBRID_BENCHMARKS.md`](HYBRID_BENCHMARKS.md)
+
 ## Why WASM Postflop?
 
 The GTO (Game Theory Optimal) solver has become an indispensable tool for poker research.
@@ -133,6 +153,15 @@ $ npm run lint
 $ npm run format
 ```
 
+## Runtime behavior in this fork
+
+- **Default safe path**: CPU-oriented path remains the reliability baseline.
+- **Experimental path**: `wgpu` backend wiring exists but is still experimental for end-to-end solve performance.
+- **Threading fallback**:
+  if multithread init fails, runtime falls back to single-thread backend automatically.
+- **Localhost serving**:
+  `server.js` sets `COOP/COEP` headers required by threaded WASM contexts.
+
 ## Experimental hybrid/GPU path
 
 An experimental speed-first data path prototype is available in:
@@ -148,6 +177,18 @@ It includes:
 - optional `wgpu` compute backend with a real on-device regret-matching kernel.
 
 See `HYBRID_ENGINE_ROADMAP.md` for details.
+
+### Run hybrid benchmark
+
+```sh
+$ ./scripts/bench-hybrid.sh
+```
+
+With WGPU kernel path enabled:
+
+```sh
+$ USE_WGPU=1 ./scripts/bench-hybrid.sh
+```
 
 ## License
 
