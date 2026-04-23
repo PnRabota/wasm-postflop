@@ -1,24 +1,22 @@
 <template>
-  <div class="min-w-[1080px]" :style="{ height: clientHeight + 'px' }">
+  <div
+    class="app-shell min-w-[1080px]"
+    :style="{ height: clientHeight + 'px' }"
+  >
     <NavBar />
 
     <div
       v-show="store.navView === 'solver'"
-      class="flex w-full mx-auto max-w-screen-xl"
-      style="height: calc(100% - 2.5rem)"
+      class="app-main-height flex w-full mx-auto max-w-screen-xl"
     >
-      <SideBar style="height: calc(100% - 2rem)" />
+      <SideBar class="app-pane-height" />
 
       <div
-        class="flex-grow my-4 px-6 pt-2 overflow-y-auto"
-        style="height: calc(100% - 2rem)"
+        class="app-pane-height flex-grow my-4 px-6 pt-2 overflow-y-auto"
       >
         <div class="flex">
           <div
-            :class="
-              'mb-5 pl-2 pr-3 pb-0.5 text-lg font-bold border-l-8 border-b-2 ' +
-              'border-blue-600 rounded rounded-br-none'
-            "
+            class="theme-section-title mb-5 pl-2 pr-3 pb-0.5 text-lg font-bold border-l-8 border-b-2 rounded rounded-br-none"
           >
             {{ header }}
           </div>
@@ -27,30 +25,21 @@
         <div v-if="store.sideView === 'about'">
           <AboutPage />
         </div>
-        <div v-show="store.sideView === 'oop-range'">
-          <RangeEditor :player="0" />
-        </div>
-        <div v-show="store.sideView === 'ip-range'">
-          <RangeEditor :player="1" />
-        </div>
-        <div v-show="store.sideView === 'board'">
-          <BoardSelector />
-        </div>
-        <div v-show="store.sideView === 'tree-config'">
-          <TreeConfig />
-        </div>
-        <div v-show="store.sideView === 'run-solver'">
-          <RunSolver />
+        <div
+          v-for="solverView in solverViews"
+          :key="solverView.id"
+          v-show="store.sideView === solverView.id"
+        >
+          <component :is="solverView.component" v-bind="solverView.props ?? {}" />
         </div>
       </div>
     </div>
 
     <div
       v-show="store.navView === 'results'"
-      class="overflow-y-auto"
-      style="height: calc(100% - 2.5rem)"
+      class="app-main-height overflow-y-auto"
     >
-      <ResultViewer style="height: calc(max(100%, 720px - 2.5rem))" />
+      <ResultViewer class="app-results-height" />
     </div>
   </div>
 </template>
@@ -82,7 +71,16 @@ export default defineComponent({
 
   setup() {
     const store = useStore();
+    store.initializeThemeMode();
+
     const header = computed(() => store.headers[store.sideView].join(" > "));
+    const solverViews = [
+      { id: "oop-range", component: RangeEditor, props: { player: 0 } },
+      { id: "ip-range", component: RangeEditor, props: { player: 1 } },
+      { id: "board", component: BoardSelector },
+      { id: "tree-config", component: TreeConfig },
+      { id: "run-solver", component: RunSolver },
+    ];
 
     const clientHeight = ref(0);
 
@@ -99,6 +97,7 @@ export default defineComponent({
     return {
       store,
       header,
+      solverViews,
       clientHeight,
     };
   },

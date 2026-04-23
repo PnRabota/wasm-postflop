@@ -510,6 +510,24 @@ export default defineComponent({
         return;
       }
 
+      let backendLabel = "legacy";
+      let backendError: string | undefined;
+      for (const candidate of ["wgpu", "legacy", "flat"]) {
+        const err = await handler.setSolverBackend(candidate);
+        if (!err) {
+          backendLabel = await handler.solverBackend();
+          backendError = undefined;
+          break;
+        }
+        backendError = err;
+      }
+
+      if (backendError) {
+        isTreeBuilding.value = false;
+        treeStatus.value = "Error: " + backendError;
+        return;
+      }
+
       saveConfig();
 
       memoryUsage.value = await handler.memoryUsage(false);
@@ -528,7 +546,7 @@ export default defineComponent({
 
       isTreeBuilding.value = false;
       isTreeBuilt.value = true;
-      treeStatus.value = `Successfully built tree (${threadText})`;
+      treeStatus.value = `Successfully built tree (${threadText}, backend: ${backendLabel})`;
     };
 
     const runSolver = async () => {
@@ -545,6 +563,10 @@ export default defineComponent({
       startTime = performance.now();
 
       await handler.allocateMemory(isCompressionEnabled.value);
+
+      const backendLabel = await handler.solverBackend();
+      const flatNodes = await handler.flatRuntimeNodes();
+      treeStatus.value = `Tree ready (${backendLabel}, runtime nodes: ${flatNodes})`;
 
       currentIteration.value = 0;
       exploitability.value = Math.max(await handler.exploitability(), 0);

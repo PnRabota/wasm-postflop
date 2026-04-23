@@ -1025,7 +1025,7 @@ export default defineComponent({
       if (spot.type === "root") {
         return spot.board.map((card) => cardText(card));
       } else if (spot.selectedIndex === -1) {
-        return [{ rank: "?", suit: "", colorClass: "text-black" }];
+        return [{ rank: "?", suit: "", colorClass: "text-slate-500" }];
       } else {
         return [cardText(spot.selectedIndex)];
       }

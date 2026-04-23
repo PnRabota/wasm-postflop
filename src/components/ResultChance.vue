@@ -51,7 +51,15 @@
 
 <script lang="ts">
 import { computed, defineComponent, ref, watch } from "vue";
-import { ranks, suits, cardId, toFixed1, toFixedAdaptive } from "../utils";
+import {
+  ranks,
+  suits,
+  cardId,
+  cssVar,
+  toFixed1,
+  toFixedAdaptive,
+} from "../utils";
+import { useStore } from "../store";
 import {
   ChanceReports,
   Spot,
@@ -94,8 +102,6 @@ const labels = [...ranks].reverse();
 const green600 = "#16a34a";
 const blue600 = "#2563eb";
 const pink600 = "#db2777";
-const black = "#000000";
-const suitColor = [green600, blue600, pink600, black];
 
 export default defineComponent({
   components: {
@@ -132,6 +138,7 @@ export default defineComponent({
   },
 
   setup(props, context) {
+    const store = useStore();
     const chartParentDiv = ref<HTMLDivElement | null>(null);
     const chartParentDivHeight = ref(0);
 
@@ -145,8 +152,15 @@ export default defineComponent({
     window.addEventListener("resize", assignChartParentDivHeight);
 
     const chartData = computed((): ChartData<"bar", number[]> | null => {
+      const isDarkTheme = store.themeMode === "dark";
       const reports = props.chanceReports;
       if (!reports) return null;
+      const suitColor = [
+        green600,
+        blue600,
+        pink600,
+        cssVar("--ui-chart-spade", isDarkTheme ? "#dbeafe" : "#000000"),
+      ];
 
       const options = props.displayOptions;
       const playerIndex = props.displayPlayer === "oop" ? 0 : 1;
@@ -215,11 +229,23 @@ export default defineComponent({
     });
 
     const chartOptions = computed((): ChartOptions<"bar"> => {
+      const isDarkTheme = store.themeMode === "dark";
       const option = props.displayOptions.chartChance;
       const style = ["strategy", "eq", "eqr"].includes(option)
         ? "percent"
         : "decimal";
       const format = { style, useGrouping: false, minimumFractionDigits: 0 };
+      const chartTextColor = cssVar(
+        "--ui-chart-text",
+        isDarkTheme ? "rgba(226, 232, 240, 0.95)" : "rgba(0, 0, 0, 0.9)"
+      );
+      const chartGridColor = cssVar(
+        "--ui-chart-grid",
+        isDarkTheme ? "rgba(71, 85, 105, 0.45)" : "rgba(0, 0, 0, 0.1)"
+      );
+      const tooltipBg = cssVar("--ui-tooltip-bg", "#0f172a");
+      const tooltipText = cssVar("--ui-tooltip-text", "#f8fafc");
+      const tooltipBorder = cssVar("--ui-tooltip-border", "#334155");
 
       const titleText =
         props.displayPlayer.toUpperCase() +
@@ -242,10 +268,15 @@ export default defineComponent({
             stacked: true,
             min: ["ev", "eqr"].includes(option) ? undefined : 0,
             max: option === "strategy" ? 1 : undefined,
-            ticks: { format },
+            ticks: { format, color: chartTextColor },
+            grid: { color: chartGridColor },
             afterFit(axis) {
               axis.width = 52;
             },
+          },
+          x: {
+            ticks: { color: chartTextColor },
+            grid: { color: chartGridColor },
           },
         },
         plugins: {
@@ -253,13 +284,18 @@ export default defineComponent({
             display: true,
             text: titleText,
             font: { size: 16, weight: "normal" },
-            color: "rgba(0, 0, 0, 0.9)",
+            color: chartTextColor,
           },
           legend: {
             display: false,
           },
           tooltip: {
             titleMarginBottom: 4,
+            backgroundColor: tooltipBg,
+            titleColor: tooltipText,
+            bodyColor: tooltipText,
+            borderColor: tooltipBorder,
+            borderWidth: 1,
             callbacks: {
               title(context) {
                 const rank = 12 - context[0].dataIndex;

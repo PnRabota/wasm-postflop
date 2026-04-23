@@ -132,6 +132,14 @@ export const colorString = (color: {
   return `#${red}${green}${blue}`;
 };
 
+export const cssVar = (name: string, fallback: string) => {
+  if (typeof window === "undefined") return fallback;
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return value || fallback;
+};
+
 const parseFloat = (s: string): number => {
   if (!s || /[beox+-]/.test(s)) {
     return Number.NaN;

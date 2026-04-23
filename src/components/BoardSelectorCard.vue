@@ -4,7 +4,7 @@
       'relative rounded-lg border select-none enabled:shadow ' +
       (isSelected
         ? 'bg-yellow-300 ring-1 ring-red-600 border-red-600'
-        : 'bg-white border-black')
+        : 'theme-board-card')
     "
     :style="{
       '--width': width,

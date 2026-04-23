@@ -211,12 +211,47 @@ impl GameManager {
         self.game.allocate_memory(enable_compression);
     }
 
-    pub fn solve_step(&self, current_iteration: u32) {
+    pub fn set_solver_backend(&mut self, backend: &str) -> Option<String> {
+        let backend = match backend.to_ascii_lowercase().as_str() {
+            "legacy" | "legacy-cpu" | "cpu" => SolveBackend::LegacyCpu,
+            "flat" | "flat-cpu" | "hybrid" | "hybrid-flat" => SolveBackend::FlatCpu,
+            "wgpu" | "gpu" | "wgpu-compute" => {
+                #[cfg(feature = "wgpu-backend")]
+                {
+                    SolveBackend::WgpuCompute
+                }
+                #[cfg(not(feature = "wgpu-backend"))]
+                {
+                    return Some(
+                        "WGPU backend unavailable in this build (use backend 'flat').".to_string(),
+                    );
+                }
+            }
+            _ => return Some("Unknown backend. Use 'legacy', 'flat' or 'wgpu'.".to_string()),
+        };
+
+        self.game.set_solve_backend(backend);
+        None
+    }
+
+    pub fn solver_backend(&self) -> String {
+        match self.game.solve_backend() {
+            SolveBackend::LegacyCpu => "legacy".to_string(),
+            SolveBackend::FlatCpu => "flat".to_string(),
+            SolveBackend::WgpuCompute => "wgpu".to_string(),
+        }
+    }
+
+    pub fn flat_runtime_nodes(&self) -> u32 {
+        self.game.flat_runtime_nodes() as u32
+    }
+
+    pub fn solve_step(&mut self, current_iteration: u32) {
         unsafe {
             if let Some(pool) = THREAD_POOL.as_ref() {
-                pool.install(|| solve_step(&self.game, current_iteration));
+                pool.install(|| solve_step(&mut self.game, current_iteration));
             } else {
-                solve_step(&self.game, current_iteration);
+                solve_step(&mut self.game, current_iteration);
             }
         }
     }

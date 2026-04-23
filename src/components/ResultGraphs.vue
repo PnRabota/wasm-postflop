@@ -50,7 +50,14 @@
 
 <script lang="ts">
 import { computed, defineComponent, ref } from "vue";
-import { cardText, cardPairOrder, toFixed1, toFixedAdaptive } from "../utils";
+import {
+  cardText,
+  cardPairOrder,
+  cssVar,
+  toFixed1,
+  toFixedAdaptive,
+} from "../utils";
+import { useStore } from "../store";
 import {
   Results,
   Spot,
@@ -129,6 +136,7 @@ export default defineComponent({
   },
 
   setup(props) {
+    const store = useStore();
     const chartWidth = ref(0);
     const tableScrollTarget = ref<number | null>(null);
 
@@ -266,6 +274,8 @@ export default defineComponent({
     });
 
     const chartOptions = computed((): ChartOptions<"line"> => {
+      const isDarkTheme = store.themeMode === "dark";
+
       const content = props.displayOptions.contentGraphs;
       const styleY = content === "ev" ? "decimal" : "percent";
       const formatX = { style: "percent", minimumFractionDigits: 0 };
@@ -274,6 +284,26 @@ export default defineComponent({
         useGrouping: false,
         minimumFractionDigits: 0,
       };
+      const chartTextColor = cssVar(
+        "--ui-chart-text",
+        isDarkTheme ? "rgba(226, 232, 240, 0.95)" : "rgba(0, 0, 0, 0.9)"
+      );
+      const chartGridColor = cssVar(
+        "--ui-chart-grid",
+        isDarkTheme ? "rgba(71, 85, 105, 0.45)" : "rgba(0, 0, 0, 0.1)"
+      );
+      const tooltipBg = cssVar(
+        "--ui-tooltip-bg",
+        isDarkTheme ? "#1b2a47" : "#0f172a"
+      );
+      const tooltipText = cssVar(
+        "--ui-tooltip-text",
+        isDarkTheme ? "#e5edff" : "#f8fafc"
+      );
+      const tooltipBorder = cssVar(
+        "--ui-tooltip-border",
+        isDarkTheme ? "#35537f" : "#334155"
+      );
 
       return {
         responsive: true,
@@ -284,7 +314,8 @@ export default defineComponent({
         scales: {
           x: {
             type: "linear",
-            ticks: { format: formatX },
+            ticks: { format: formatX, color: chartTextColor },
+            grid: { color: chartGridColor },
             afterFit(axis) {
               chartWidth.value = axis.width;
             },
@@ -295,7 +326,9 @@ export default defineComponent({
             suggestedMin: content === "ev" ? 0 : undefined,
             ticks: {
               format: formatY,
+              color: chartTextColor,
             },
+            grid: { color: chartGridColor },
             afterFit(axis) {
               axis.width = 52;
             },
@@ -309,7 +342,7 @@ export default defineComponent({
           legend: {
             labels: {
               font: { size: 16 },
-              color: "rgba(0, 0, 0, 0.9)",
+              color: chartTextColor,
               boxHeight: 12,
             },
           },
@@ -317,6 +350,11 @@ export default defineComponent({
             padding: 8,
             boxWidth: 10,
             boxHeight: 10,
+            backgroundColor: tooltipBg,
+            titleColor: tooltipText,
+            bodyColor: tooltipText,
+            borderColor: tooltipBorder,
+            borderWidth: 1,
             callbacks: {
               title() {
                 return "";

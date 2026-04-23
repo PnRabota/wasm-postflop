@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { sanitizeBetString } from "./utils";
 
 export type NavView = "solver" | "results";
+export type ThemeMode = "light" | "dark";
 
 export type SideView =
   | "about"
@@ -88,6 +89,7 @@ export const saveConfig = () => {
 export const useStore = defineStore("app", {
   state: () => ({
     navView: "solver" as NavView,
+    themeMode: "light" as ThemeMode,
     sideView: "about" as SideView,
     headers: {
       about: ["Welcome to WASM Postflop!"],
@@ -111,6 +113,41 @@ export const useStore = defineStore("app", {
         state.isSolverPaused ||
         state.isSolverFinished
       );
+    },
+  },
+
+  actions: {
+    initializeThemeMode() {
+      if (typeof window === "undefined") return;
+
+      const savedTheme = localStorage.getItem("ui-theme-mode");
+      const hasSavedTheme = savedTheme === "light" || savedTheme === "dark";
+      const preferredTheme = window.matchMedia?.("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light";
+
+      this.setThemeMode(
+        (hasSavedTheme ? savedTheme : preferredTheme) as ThemeMode,
+        false
+      );
+    },
+
+    setThemeMode(mode: ThemeMode, persist = true) {
+      this.themeMode = mode;
+
+      if (typeof document !== "undefined") {
+        document.documentElement.setAttribute("data-theme", mode);
+        document.documentElement.style.colorScheme = mode;
+      }
+
+      if (persist && typeof window !== "undefined") {
+        localStorage.setItem("ui-theme-mode", mode);
+      }
+    },
+
+    toggleThemeMode() {
+      this.setThemeMode(this.themeMode === "light" ? "dark" : "light");
     },
   },
 });

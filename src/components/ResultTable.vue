@@ -57,7 +57,75 @@
       class="flex-grow overflow-y-scroll will-change-scroll"
       @scroll.passive="onTableScroll"
     >
-      <table class="w-full h-full text-sm text-center align-middle">
+      <div
+        v-if="showComboMosaic"
+        class="grid gap-2 p-2"
+        style="grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr))"
+      >
+        <div
+          v-for="item in resultsSorted"
+          :key="item[0]"
+          class="rounded-lg border border-gray-400 bg-gray-50/95 px-2.5 py-2 shadow-sm"
+        >
+          <div class="flex items-center justify-between">
+            <div class="text-base font-semibold leading-none">
+              <span
+                v-for="card in pairText(item[INDEX_CARD_PAIR])"
+                :key="card.rank + card.suit"
+                :class="card.colorClass"
+              >
+                {{ card.rank + card.suit }}
+              </span>
+            </div>
+            <div class="text-[11px] text-gray-600">
+              EV {{ toFixed[evDigits - 1](item[INDEX_EV]) }}
+            </div>
+          </div>
+
+          <div
+            v-if="actionColumnsMosaic.length > 0"
+            class="mt-2 h-1.5 rounded-full bg-neutral-800"
+            :style="{
+              'background-image': strategyBarBgImage(item),
+              'background-size': '100% 100%',
+            }"
+          ></div>
+
+          <div
+            v-if="actionColumnsMosaic.length > 0"
+            class="mt-2 grid grid-cols-2 gap-1.5"
+          >
+            <div
+              v-for="column in actionColumnsMosaic"
+              :key="column.label + '-' + column.index"
+              class="rounded border px-1.5 py-1 text-[11px]"
+              :style="{
+                borderColor: actionColorForColumn(column),
+                backgroundColor: colorWithAlpha(actionColorForColumn(column)),
+              }"
+            >
+              <div class="truncate text-gray-700">{{ column.label }}</div>
+              <div class="font-semibold text-gray-900">
+                {{ actionValueText(column, item) }}
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-2 flex justify-between text-[11px] text-gray-600">
+            <span>Weight {{ toFixed1(item[INDEX_WEIGHT] * 100) }}%</span>
+            <span>
+              EQ
+              {{
+                isNaN(item[INDEX_EQUITY])
+                  ? "-"
+                  : toFixed1(item[INDEX_EQUITY] * 100) + "%"
+              }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <table v-else class="w-full h-full text-sm text-center align-middle">
         <thead class="sticky top-0 z-30 bg-gray-100 shadow">
           <tr style="height: calc(1.9rem + 1px)">
             <th
@@ -844,6 +912,42 @@ export default defineComponent({
       return ret;
     });
 
+    const showComboMosaic = computed(() => {
+      return (
+        props.tableMode === "basics" &&
+        !!props.hoverContent &&
+        resultsSorted.value.length > 0
+      );
+    });
+
+    const actionColumnsMosaic = computed(() => {
+      return columns.value.filter((column) => {
+        return column.type === "action" || column.type === "action-ev";
+      }) as (ColumnAction | ColumnActionEV)[];
+    });
+
+    const actionColorForColumn = (column: ColumnAction | ColumnActionEV) => {
+      return actionColors.value[column.index] ?? "#64748b";
+    };
+
+    const colorWithAlpha = (hexColor: string, alpha = "22") => {
+      if (/^#[0-9a-fA-F]{6}$/.test(hexColor)) {
+        return `${hexColor}${alpha}`;
+      }
+      return hexColor;
+    };
+
+    const actionValueText = (
+      column: ColumnAction | ColumnActionEV,
+      row: number[]
+    ) => {
+      const value = row[columnIndex(column)];
+      if (column.type === "action") {
+        return `${toFixed1(value * 100)}%`;
+      }
+      return toFixed[evDigits.value - 1](value);
+    };
+
     const rem = Number(
       getComputedStyle(document.documentElement).fontSize.slice(0, -2)
     );
@@ -1079,6 +1183,12 @@ export default defineComponent({
       sortBy,
       evDigits,
       columns,
+      resultsSorted,
+      showComboMosaic,
+      actionColumnsMosaic,
+      actionColorForColumn,
+      colorWithAlpha,
+      actionValueText,
       onTableScroll,
       resultsRendered,
       emptyBufferTop,
@@ -1087,6 +1197,10 @@ export default defineComponent({
       strategyBarBgImage,
       strategyBarBgSize,
       actionBarBg,
+      INDEX_CARD_PAIR,
+      INDEX_WEIGHT,
+      INDEX_EQUITY,
+      INDEX_EV,
       exportSummaryButton,
       exportSummary,
       strTmp: "",

@@ -133,6 +133,22 @@ $ npm run lint
 $ npm run format
 ```
 
+## Experimental hybrid/GPU path
+
+An experimental speed-first data path prototype is available in:
+
+- `rust/hybrid-lab`
+
+It includes:
+
+- flat tree representation,
+- aligned contiguous regret/strategy/cfvalue buffers,
+- host/device mirror transfer model,
+- benchmark harness for legacy vs flat vs hybrid-like execution modes,
+- optional `wgpu` compute backend with a real on-device regret-matching kernel.
+
+See `HYBRID_ENGINE_ROADMAP.md` for details.
+
 ## License
 
 Copyright (C) 2022 Wataru Inariba

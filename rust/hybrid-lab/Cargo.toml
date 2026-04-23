@@ -1,0 +1,16 @@
+[package]
+name = "hybrid-lab"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+description = "Experimental hybrid/GPU-oriented data path for postflop solver kernels"
+
+[dependencies]
+rayon = "1.10"
+bytemuck = { version = "1.16", features = ["derive"] }
+pollster = { version = "0.3", optional = true }
+wgpu = { version = "0.20", optional = true }
+
+[features]
+default = []
+wgpu-backend = ["dep:wgpu", "dep:pollster"]

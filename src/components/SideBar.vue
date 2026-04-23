@@ -70,7 +70,7 @@ export default defineComponent({
 
     const boardTexts = computed(() => {
       if (config.board.length === 0) {
-        return [{ rank: "-", suit: "", colorClass: "text-black" }];
+        return [{ rank: "-", suit: "", colorClass: "text-slate-500" }];
       } else {
         return config.board.map(cardText);
       }

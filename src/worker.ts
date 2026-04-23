@@ -81,6 +81,18 @@ const createHandler = (mod: Mod) => {
       this.game.allocate_memory(enableCompression);
     },
 
+    setSolverBackend(backend: string) {
+      return this.game.set_solver_backend(backend);
+    },
+
+    solverBackend() {
+      return this.game.solver_backend();
+    },
+
+    flatRuntimeNodes() {
+      return this.game.flat_runtime_nodes();
+    },
+
     iterate(iteration: number) {
       this.game.solve_step(iteration);
     },
@@ -129,7 +141,13 @@ const createHandler = (mod: Mod) => {
 
 const isMTSupported = () => {
   const browser = detect();
-  return !(browser && (browser.name === "safari" || browser.os === "iOS"));
+  const isWebkitLimited =
+    !!browser && (browser.name === "safari" || browser.os === "iOS");
+  const hasThreadPrerequisites =
+    typeof SharedArrayBuffer !== "undefined" &&
+    (globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated ===
+      true;
+  return !isWebkitLimited && hasThreadPrerequisites;
 };
 
 let mod: Mod | null = null;
@@ -137,19 +155,27 @@ export type Handler = ReturnType<typeof createHandler>;
 
 const initHandler = async (num_threads: number) => {
   if (isMTSupported()) {
-    mod = await import("../pkg/solver-mt/solver.js");
-    await mod.default();
-    await (mod as ModMT).initThreadPool(num_threads);
-  } else {
-    mod = await import("../pkg/solver-st/solver.js");
-    await mod.default();
+    try {
+      mod = await import("../pkg/solver-mt/solver.js");
+      await mod.default();
+      await (mod as ModMT).initThreadPool(num_threads);
+      return Comlink.proxy(createHandler(mod));
+    } catch (error) {
+      console.warn(
+        "[solver] Falling back to single-thread backend:",
+        String(error)
+      );
+    }
   }
+
+  mod = await import("../pkg/solver-st/solver.js");
+  await mod.default();
 
   return Comlink.proxy(createHandler(mod));
 };
 
 const beforeTerminate = async () => {
-  if (isMTSupported()) {
+  if (mod && "exitThreadPool" in mod) {
     await (mod as ModMT).exitThreadPool();
   }
 };
