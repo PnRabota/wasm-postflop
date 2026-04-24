@@ -119,7 +119,7 @@ RAYON_NUM_THREADS=16 cargo run --release --no-default-features --features rayon,
 | `legacy` (origin path) | 0.1785 | 32.76 s |
 | `flat` | 0.1785 | 32.75 s |
 | `flat` + compression | 0.1664 | 30.94 s |
-| `wgpu` (chunked runtime) | 0.1666 | 224.67 s |
+| `wgpu` (chunked runtime) | 0.1666 | 197.81 s |
 
 > Note: on this full-solver spot, `flat` and `legacy` are now close, with `flat` slightly ahead in this snapshot.
 > The current GPU path is now chunked and honors binding-size limits (no panic on oversized buffers), but remains transfer-bound and slower than CPU on this preset.
@@ -144,7 +144,7 @@ The table below combines fresh local runs for this fork with the last published 
 - `flat + compression`: `30.94 s`, exploitability `0.1664`, memory `0.65 GB`
 - `flat` uncompressed: `32.75 s`, exploitability `0.1785`, memory `1.26 GB`
 - `legacy` uncompressed: `32.76 s`, exploitability `0.1785`, memory `1.26 GB`
-- `wgpu` chunked: `224.67 s`, exploitability `0.1666`, memory `1.26 GB`
+- `wgpu` chunked: `197.81 s`, exploitability `0.1666`, memory `1.26 GB`
 
 ## Build
 
