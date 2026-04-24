@@ -114,29 +114,34 @@ rustup run nightly cargo run --release --example backend_bench --no-default-feat
 
 | Backend | Exploitability | Time (ms) |
 | --- | ---: | ---: |
-| `legacy` (origin path) | 0.9110 | 365.72 |
-| `flat` | 0.9110 | 607.96 |
-| `wgpu` | 0.8364 | 2121.29 |
+| `legacy` (origin path) | 0.9110 | 186.88 |
+| `flat` | 0.9110 | 183.63 |
+| `wgpu` | 0.8364 | 1736.91 |
 
-> Note: on this full-solver spot, the origin-compatible `legacy` backend is still faster.
+> Note: on this full-solver spot, `flat` and `legacy` are now close, with `flat` slightly ahead in this snapshot.
 > The current GPU path is functional but still experimental in end-to-end CFR.
-> On large full-preset runs (`pio_preset_bench`), current `wgpu` backend can exceed the default WebGPU max buffer limit (256 MB) and fail allocation.
+> On large full-preset runs (`pio_preset_bench`), oversized WGPU buffers are now detected and the runtime falls back to CPU path instead of panicking.
 
 ### External solver comparison (historical upstream reference)
 
-The table below keeps the last published cross-solver reference from upstream README (same 3betpotFAST methodology), to keep continuity against commercial and open-source tools.
-These are **reference values**, not rerun in this fork refresh.
+The table below combines fresh local runs for this fork with the last published upstream cross-solver references (same 3betpotFAST methodology) to keep continuity against commercial and open-source tools.
 
 | Solver | Time (Target 0.1%, 16 threads) | Memory |
 | :--- | ---: | ---: |
-| This fork (Apr 2026 local run, `legacy`, avg of 3 runs) | **32.0 s** | **1.25 GB** |
+| This fork (Apr 24, 2026 local run, `flat` + compression) | **28.1 s** | **0.65 GB** |
+| This fork (Apr 24, 2026 local run, `flat`, uncompressed) | 31.5 s | 1.26 GB |
 | WASM Postflop (upstream reference) | 45.5 s | 1.25 GB |
 | Desktop Postflop (v0.2.1) | 27.9 s | 1.27 GB |
 | PioSOLVER Free (2.0.8, 6-thread cap) | 60.1 s (6 threads) | 1.41 GB |
 | GTO+ (v1.5.0) | 41.7 s | 705 MB |
 | TexasSolver (v0.2.0) | 182.6 s | 2.84 GB |
 
-`This fork` row details: measured with `RAYON_NUM_THREADS=16` on `examples/pio_preset_bench` (preset matching `solve_pio_preset_normal`), runs = `29.43 s`, `31.46 s`, `35.21 s` (avg `32.03 s`), memory `1.25 GB`.
+`This fork` row details (Apr 24, 2026):
+- `RAYON_NUM_THREADS=16`
+- benchmark: `examples/pio_preset_bench` (preset matching `solve_pio_preset_normal`)
+- `flat + compression`: `28.14 s`, exploitability `0.1664`, memory `0.65 GB`
+- `flat` uncompressed: `31.52 s`, exploitability `0.1785`, memory `1.26 GB`
+- `legacy` uncompressed: `32.32 s`, exploitability `0.1785`, memory `1.26 GB`
 
 ## Build
 

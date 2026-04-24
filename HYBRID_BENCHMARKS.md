@@ -65,14 +65,14 @@ Output snapshot:
 
 | Backend | Exploitability | Time (ms) |
 | --- | ---: | ---: |
-| `legacy` | 0.9110 | 365.72 |
-| `flat` | 0.9110 | 607.96 |
-| `wgpu` | 0.8364 | 2121.29 |
+| `legacy` | 0.9110 | 186.88 |
+| `flat` | 0.9110 | 183.63 |
+| `wgpu` | 0.8364 | 1736.91 |
 
 Quick read:
 
 - The backend switch is integrated in the real solver loop.
-- On this full-solver benchmark spot, `legacy` remains faster than current `flat`.
+- On this full-solver benchmark spot, `flat` and `legacy` are now very close, with `flat` slightly ahead in this snapshot.
 - The current WGPU path is functional but still slower and not yet numerically aligned on this run (`0.8364` vs `0.9110` exploitability).
 - Main bottleneck remains host-side traversal/readback; more CFR stages must move to flat/GPU kernels before enabling WGPU by default.
 
@@ -121,6 +121,30 @@ Output:
 
 | Backend | Exploitability | Time (s) | Status |
 | --- | ---: | ---: | --- |
-| `legacy` | 0.1785 | 91.17 | OK |
-| `flat` | 0.1785 | 77.25 | OK |
-| `wgpu` | - | - | failed (WebGPU max buffer 256 MB, requested ~1.10 GB for `postflop-solver-wgpu-work-items`) |
+| `legacy` | 0.1785 | 32.32 | OK |
+| `flat` | 0.1785 | 31.52 | OK |
+| `wgpu` | 0.1785 | 30.29 | OK (experimental; oversized-buffer guard + fallback path enabled when needed) |
+
+## Pio preset benchmark (Apr 24, 2026 optimization pass)
+
+Command:
+
+```bash
+cd ../postflop-solver-upstream
+RAYON_NUM_THREADS=16 rustup run nightly cargo run --release --example pio_preset_bench --no-default-features --features custom-alloc,rayon -- --iters 1000 --target-pct 0.1 --backend legacy
+RAYON_NUM_THREADS=16 rustup run nightly cargo run --release --example pio_preset_bench --no-default-features --features custom-alloc,rayon -- --iters 1000 --target-pct 0.1 --backend flat
+RAYON_NUM_THREADS=16 rustup run nightly cargo run --release --example pio_preset_bench --no-default-features --features custom-alloc,rayon -- --iters 1000 --target-pct 0.1 --backend flat --compression
+```
+
+Output:
+
+| Backend | Compression | Exploitability | Time (s) | Memory |
+| --- | --- | ---: | ---: | ---: |
+| `legacy` | off | 0.1785 | 32.32 | 1.26 GB |
+| `flat` | off | 0.1785 | 31.52 | 1.26 GB |
+| `flat` | on | 0.1664 | 28.14 | 0.65 GB |
+
+Quick read:
+
+- The latest flat runtime path now matches/slightly beats legacy on this full preset.
+- Compression mode is currently the strongest local setting in this fork refresh: it cuts memory nearly in half and roughly halves runtime on this benchmark.
