@@ -108,19 +108,21 @@ Command:
 
 ```sh
 cd ../postflop-solver-upstream
-rustup run nightly cargo run --release --example backend_bench --no-default-features --features custom-alloc,rayon -- --iters 200 --target-pct 0.5
-rustup run nightly cargo run --release --example backend_bench --no-default-features --features custom-alloc,rayon,wgpu-backend -- --iters 200 --target-pct 0.5
+RAYON_NUM_THREADS=16 cargo run --release --no-default-features --features rayon,wgpu-backend --example pio_preset_bench -- --backend legacy --iters 200 --target-pct 0.1
+RAYON_NUM_THREADS=16 cargo run --release --no-default-features --features rayon,wgpu-backend --example pio_preset_bench -- --backend flat --iters 200 --target-pct 0.1
+RAYON_NUM_THREADS=16 cargo run --release --no-default-features --features rayon,wgpu-backend --example pio_preset_bench -- --backend flat --compression --iters 200 --target-pct 0.1
+RAYON_NUM_THREADS=16 cargo run --release --no-default-features --features rayon,wgpu-backend --example pio_preset_bench -- --backend wgpu --iters 200 --target-pct 0.1
 ```
 
-| Backend | Exploitability | Time (ms) |
+| Backend | Exploitability | Time |
 | --- | ---: | ---: |
-| `legacy` (origin path) | 0.9110 | 186.88 |
-| `flat` | 0.9110 | 183.63 |
-| `wgpu` | 0.8364 | 1736.91 |
+| `legacy` (origin path) | 0.1785 | 32.76 s |
+| `flat` | 0.1785 | 32.75 s |
+| `flat` + compression | 0.1664 | 30.94 s |
+| `wgpu` (chunked runtime) | 0.1666 | 224.67 s |
 
 > Note: on this full-solver spot, `flat` and `legacy` are now close, with `flat` slightly ahead in this snapshot.
-> The current GPU path is functional but still experimental in end-to-end CFR.
-> On large full-preset runs (`pio_preset_bench`), oversized WGPU buffers are now detected and the runtime falls back to CPU path instead of panicking.
+> The current GPU path is now chunked and honors binding-size limits (no panic on oversized buffers), but remains transfer-bound and slower than CPU on this preset.
 
 ### External solver comparison (historical upstream reference)
 
@@ -128,8 +130,8 @@ The table below combines fresh local runs for this fork with the last published 
 
 | Solver | Time (Target 0.1%, 16 threads) | Memory |
 | :--- | ---: | ---: |
-| This fork (Apr 24, 2026 local run, `flat` + compression) | **28.1 s** | **0.65 GB** |
-| This fork (Apr 24, 2026 local run, `flat`, uncompressed) | 31.5 s | 1.26 GB |
+| This fork (Apr 24, 2026 local run, `flat` + compression) | **30.9 s** | **0.65 GB** |
+| This fork (Apr 24, 2026 local run, `flat`, uncompressed) | 32.8 s | 1.26 GB |
 | WASM Postflop (upstream reference) | 45.5 s | 1.25 GB |
 | Desktop Postflop (v0.2.1) | 27.9 s | 1.27 GB |
 | PioSOLVER Free (2.0.8, 6-thread cap) | 60.1 s (6 threads) | 1.41 GB |
@@ -139,9 +141,10 @@ The table below combines fresh local runs for this fork with the last published 
 `This fork` row details (Apr 24, 2026):
 - `RAYON_NUM_THREADS=16`
 - benchmark: `examples/pio_preset_bench` (preset matching `solve_pio_preset_normal`)
-- `flat + compression`: `28.14 s`, exploitability `0.1664`, memory `0.65 GB`
-- `flat` uncompressed: `31.52 s`, exploitability `0.1785`, memory `1.26 GB`
-- `legacy` uncompressed: `32.32 s`, exploitability `0.1785`, memory `1.26 GB`
+- `flat + compression`: `30.94 s`, exploitability `0.1664`, memory `0.65 GB`
+- `flat` uncompressed: `32.75 s`, exploitability `0.1785`, memory `1.26 GB`
+- `legacy` uncompressed: `32.76 s`, exploitability `0.1785`, memory `1.26 GB`
+- `wgpu` chunked: `224.67 s`, exploitability `0.1666`, memory `1.26 GB`
 
 ## Build
 
