@@ -128,11 +128,14 @@ These are **reference values**, not rerun in this fork refresh.
 
 | Solver | Time (Target 0.1%, 16 threads) | Memory |
 | :--- | ---: | ---: |
+| This fork (Apr 2026 local run, `legacy`, avg of 3 runs) | **32.0 s** | **1.25 GB** |
 | WASM Postflop (upstream reference) | 45.5 s | 1.25 GB |
 | Desktop Postflop (v0.2.1) | 27.9 s | 1.27 GB |
 | PioSOLVER Free (2.0.8, 6-thread cap) | 60.1 s (6 threads) | 1.41 GB |
 | GTO+ (v1.5.0) | 41.7 s | 705 MB |
 | TexasSolver (v0.2.0) | 182.6 s | 2.84 GB |
+
+`This fork` row details: measured with `RAYON_NUM_THREADS=16` on `examples/pio_preset_bench` (preset matching `solve_pio_preset_normal`), runs = `29.43 s`, `31.46 s`, `35.21 s` (avg `32.03 s`), memory `1.25 GB`.
 
 ## Build
 

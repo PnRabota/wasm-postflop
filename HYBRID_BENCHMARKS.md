@@ -85,3 +85,31 @@ Quick read:
 - The backend switch is now integrated in the real solver loop.
 - The current WGPU path is functional, but not yet faster on this complete solve path.
 - Main bottleneck remains host-side traversal and readback; more CFR stages must move to flat/GPU kernels before enabling WGPU as default.
+
+## Pio preset benchmark (this fork local anchor)
+
+Date: April 23, 2026
+
+Scenario:
+
+- `postflop-solver-upstream/examples/pio_preset_bench.rs`
+- `RAYON_NUM_THREADS=16`
+- target exploitability: `0.1%` (of pot)
+- memory mode: 32-bit float
+
+Command:
+
+```bash
+cd ../postflop-solver-upstream
+RAYON_NUM_THREADS=16 rustup run nightly cargo run --release --example pio_preset_bench --no-default-features --features custom-alloc,rayon -- --iters 1000 --target-pct 0.1 --backend legacy
+```
+
+Runs:
+
+| Run | Time (s) | Exploitability | Memory |
+| --- | ---: | ---: | ---: |
+| 1 | 29.43 | 0.1785 | 1.25 GB |
+| 2 | 31.46 | 0.1785 | 1.25 GB |
+| 3 | 35.21 | 0.1785 | 1.25 GB |
+
+Average time: **32.03 s**
