@@ -114,12 +114,13 @@ rustup run nightly cargo run --release --example backend_bench --no-default-feat
 
 | Backend | Exploitability | Time (ms) |
 | --- | ---: | ---: |
-| `legacy` (origin path) | 0.9110 | 253.41 |
-| `flat` | 0.9110 | 1998.38 |
-| `wgpu` | 0.8364 | 3858.97 |
+| `legacy` (origin path) | 0.9110 | 365.72 |
+| `flat` | 0.9110 | 607.96 |
+| `wgpu` | 0.8364 | 2121.29 |
 
 > Note: on this full-solver spot, the origin-compatible `legacy` backend is still faster.
 > The current GPU path is functional but still experimental in end-to-end CFR.
+> On large full-preset runs (`pio_preset_bench`), current `wgpu` backend can exceed the default WebGPU max buffer limit (256 MB) and fail allocation.
 
 ### External solver comparison (historical upstream reference)
 

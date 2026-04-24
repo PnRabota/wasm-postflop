@@ -51,44 +51,34 @@ The `hybrid-lab` benchmark is a **kernel/data-path benchmark** and should be use
 
 ## Real solver benchmark (postflop-solver backend switch)
 
-Date: April 23, 2026
+Date: April 24, 2026
 
 Command:
 
 ```bash
 cd ../postflop-solver-upstream
-cargo run --release --example backend_bench --no-default-features --features custom-alloc,rayon -- --iters 200 --target-pct 0.5
+RAYON_NUM_THREADS=16 rustup run nightly cargo run --release --example backend_bench --no-default-features --features custom-alloc,rayon -- --iters 200 --target-pct 0.5
+RAYON_NUM_THREADS=16 rustup run nightly cargo run --release --example backend_bench --no-default-features --features custom-alloc,rayon,wgpu-backend -- --iters 200 --target-pct 0.5
 ```
 
-Output:
+Output snapshot:
 
 | Backend | Exploitability | Time (ms) |
 | --- | ---: | ---: |
-| `legacy` | 0.9110 | 253.41 |
-| `flat` | 0.9110 | 1998.38 |
-
-With WGPU feature:
-
-```bash
-cd ../postflop-solver-upstream
-cargo run --release --example backend_bench --no-default-features --features custom-alloc,rayon,wgpu-backend -- --iters 200 --target-pct 0.5
-```
-
-| Backend | Exploitability | Time (ms) |
-| --- | ---: | ---: |
-| `legacy` | 0.9110 | 361.17 |
-| `flat` | 0.9110 | 1936.71 |
-| `wgpu` | 0.8364 | 3858.97 |
+| `legacy` | 0.9110 | 365.72 |
+| `flat` | 0.9110 | 607.96 |
+| `wgpu` | 0.8364 | 2121.29 |
 
 Quick read:
 
-- The backend switch is now integrated in the real solver loop.
-- The current WGPU path is functional, but not yet faster on this complete solve path.
-- Main bottleneck remains host-side traversal and readback; more CFR stages must move to flat/GPU kernels before enabling WGPU as default.
+- The backend switch is integrated in the real solver loop.
+- On this full-solver benchmark spot, `legacy` remains faster than current `flat`.
+- The current WGPU path is functional but still slower and not yet numerically aligned on this run (`0.8364` vs `0.9110` exploitability).
+- Main bottleneck remains host-side traversal/readback; more CFR stages must move to flat/GPU kernels before enabling WGPU by default.
 
 ## Pio preset benchmark (this fork local anchor)
 
-Date: April 23, 2026
+Date: April 24, 2026
 
 Scenario:
 
@@ -113,3 +103,24 @@ Runs:
 | 3 | 35.21 | 0.1785 | 1.25 GB |
 
 Average time: **32.03 s**
+
+### Backend sweep (current integration snapshot)
+
+Note: this sweep reflects the current in-progress backend integration state in `postflop-solver-upstream` (not the earlier stabilized anchor run above).
+
+Command:
+
+```bash
+cd ../postflop-solver-upstream
+RAYON_NUM_THREADS=16 rustup run nightly cargo run --release --example pio_preset_bench --no-default-features --features custom-alloc,rayon -- --iters 1000 --target-pct 0.1 --backend legacy
+RAYON_NUM_THREADS=16 rustup run nightly cargo run --release --example pio_preset_bench --no-default-features --features custom-alloc,rayon -- --iters 1000 --target-pct 0.1 --backend flat
+RAYON_NUM_THREADS=16 rustup run nightly cargo run --release --example pio_preset_bench --no-default-features --features custom-alloc,rayon,wgpu-backend -- --iters 1000 --target-pct 0.1 --backend wgpu
+```
+
+Output:
+
+| Backend | Exploitability | Time (s) | Status |
+| --- | ---: | ---: | --- |
+| `legacy` | 0.1785 | 91.17 | OK |
+| `flat` | 0.1785 | 77.25 | OK |
+| `wgpu` | - | - | failed (WebGPU max buffer 256 MB, requested ~1.10 GB for `postflop-solver-wgpu-work-items`) |
